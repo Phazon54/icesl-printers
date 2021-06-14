@@ -6,13 +6,13 @@
 
 extruder_e = {}
 extruder_e_restart = {}
-extruder_e_swap = {}
 
 for i = 0, extruder_count -1 do
   extruder_e[i] = 0.0
   extruder_e_restart[i] = 0.0
-  extruder_e_swap[i] = 0.0
 end
+
+skip_prime_retract = false
 
 current_z = 0.0
 
@@ -62,35 +62,59 @@ function layer_stop()
 end
 
 function retract(extruder,e)
-  comment('retract')
-  local len   = filament_priming_mm[extruder]
-  local speed = priming_mm_per_sec[extruder] * 60;
-  output('G1 F' .. speed .. ' E' .. ff(e - len - extruder_e_restart[extruder]))
-  current_frate = speed
-  changed_frate = true
-  extruder_e[extruder] = e - len
-  return e - len
+  if skip_prime_retract then 
+    comment('retract skipped')
+    skip_prime_retract = false
+    return e
+  else
+    comment('retract')
+    local len   = filament_priming_mm[extruder]
+    local speed = priming_mm_per_sec[extruder] * 60
+    output('G1 F' .. speed .. ' E' .. ff(e - len - extruder_e_restart[extruder]))
+    current_frate = speed
+    changed_frate = true
+    extruder_e[extruder] = e - len
+    return e - len
+  end
 end
 
 function prime(extruder,e)
-  comment('prime')
-  local len   = filament_priming_mm[extruder]
-  local speed = priming_mm_per_sec[extruder] * 60;
-  output('G1 F' .. speed .. ' E' .. ff(e + len - extruder_e_restart[extruder]))
-  current_frate = speed
-  changed_frate = true
-  extruder_e[extruder] = e + len
-  return e + len
+  if skip_prime_retract then 
+    comment('prime skipped')
+    skip_prime_retract = false
+    return e
+  else
+    comment('prime')
+    local len   = filament_priming_mm[extruder]
+    local speed = priming_mm_per_sec[extruder] * 60
+    output('G1 F' .. speed .. ' E' .. ff(e + len - extruder_e_restart[extruder]))
+    current_frate = speed
+    changed_frate = true
+    extruder_e[extruder] = e + len
+    return e + len
+  end
 end
 
 function select_extruder(extruder)
   current_extruder = extruder
+  skip_prime_retract = true
 end
 
 function swap_extruder(from,to,x,y,z)
   output('; Extruder change from vE' .. from .. ' to vE' .. to)
-  extruder_e_swap[from] = extruder_e_swap[from] + extruder_e[from] - extruder_e_reset[from]
+  output('G92 E0')
+  extruder_e_restart[from] = extruder_e[from]
   current_extruder = to
+  if to == 0 then -- skip priming when going back to vE0, as vE1 has no retract
+    skip_prime_retract = true
+  end
+  if to == 1 then -- re-prime after swap from vE0 to equalize filament level
+    local len   = filament_priming_mm[from]
+    local speed = priming_mm_per_sec[from] * 60
+    comment('filament equalization')
+    output('G1 F' .. speed .. ' E' .. ff(len))
+    output('G92 E0')
+  end
 end
 
 function move_xyz(x,y,z)
