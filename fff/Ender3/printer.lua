@@ -13,6 +13,7 @@ for i = 0, extruder_count -1 do
 end
 
 skip_prime_retract = false
+skip_temp = false
 
 current_z = 0.0
 
@@ -98,6 +99,7 @@ end
 function select_extruder(extruder)
   current_extruder = extruder
   skip_prime_retract = true
+  skip_temp = true
 end
 
 function swap_extruder(from,to,x,y,z)
@@ -105,6 +107,7 @@ function swap_extruder(from,to,x,y,z)
   output('G92 E0')
   extruder_e_restart[from] = extruder_e[from]
   current_extruder = to
+  skip_temp = true
   if to == 0 then -- skip priming when going back to vE0, as vE1 has no retract
     skip_prime_retract = true
   end
@@ -185,11 +188,21 @@ function progress(percent)
 end
 
 function set_extruder_temperature(extruder,temperature)
-  output('M104 S' .. temperature)
+  if skip_temp then 
+    comment('M104 skipped')
+    skip_temp = false
+  else
+    output('M104 S' .. temperature)
+  end
 end
 
 function set_and_wait_extruder_temperature(extruder,temperature)
-  output('M109 S' .. temperature)
+  if skip_temp then 
+    comment('M109 skipped')
+    skip_temp = false
+  else
+    output('M109 S' .. temperature)
+  end
 end
 
 function set_fan_speed(speed)
