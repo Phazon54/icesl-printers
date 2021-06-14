@@ -1,8 +1,18 @@
 -- Ender 3 Profile
 -- Bedell Pierre 27/10/2018
 
-extruder_e = 0
-extruder_e_restart = 0
+--extruder_e = 0
+--extruder_e_restart = 0
+
+extruder_e = {}
+extruder_e_restart = {}
+extruder_e_swap = {}
+
+for i = 0, extruder_count -1 do
+  extruder_e[i] = 0.0
+  extruder_e_restart[i] = 0.0
+  extruder_e_swap[i] = 0.0
+end
 
 current_z = 0.0
 
@@ -46,7 +56,7 @@ function layer_start(zheight)
 end
 
 function layer_stop()
-  extruder_e_restart = extruder_e
+  extruder_e_restart[current_extruder] = extruder_e[current_extruder]
   output('G92 E0')
   comment('</layer>')
 end
@@ -55,10 +65,10 @@ function retract(extruder,e)
   comment('retract')
   local len   = filament_priming_mm[extruder]
   local speed = priming_mm_per_sec[extruder] * 60;
-  output('G1 F' .. speed .. ' E' .. ff(e - len - extruder_e_restart))
+  output('G1 F' .. speed .. ' E' .. ff(e - len - extruder_e_restart[extruder]))
   current_frate = speed
   changed_frate = true
-  extruder_e = e - len
+  extruder_e[extruder] = e - len
   return e - len
 end
 
@@ -66,17 +76,21 @@ function prime(extruder,e)
   comment('prime')
   local len   = filament_priming_mm[extruder]
   local speed = priming_mm_per_sec[extruder] * 60;
-  output('G1 F' .. speed .. ' E' .. ff(e + len - extruder_e_restart))
+  output('G1 F' .. speed .. ' E' .. ff(e + len - extruder_e_restart[extruder]))
   current_frate = speed
   changed_frate = true
-  extruder_e = e + len
+  extruder_e[extruder] = e + len
   return e + len
 end
 
 function select_extruder(extruder)
+  current_extruder = extruder
 end
 
 function swap_extruder(from,to,x,y,z)
+  output('; Extruder change from vE' .. from .. ' to vE' .. to)
+  extruder_e_swap[from] = extruder_e_swap[from] + extruder_e[from] - extruder_e_reset[from]
+  current_extruder = to
 end
 
 function move_xyz(x,y,z)
@@ -99,8 +113,8 @@ function move_xyz(x,y,z)
 end
 
 function move_xyze(x,y,z,e)
-  extruder_e = e
-  local e_value = extruder_e - extruder_e_restart
+  extruder_e[current_extruder] = e
+  local e_value = extruder_e[current_extruder] - extruder_e_restart[current_extruder]
   if z == current_z then
     if changed_frate == true then 
       output('G1 F' .. current_frate .. ' X' .. f(x) .. ' Y' .. f(y) .. ' E' .. ff(e_value))
@@ -120,8 +134,8 @@ function move_xyze(x,y,z,e)
 end
 
 function move_e(e)
-  extruder_e = e
-  local e_value = extruder_e - extruder_e_restart
+  extruder_e[current_extruder] = e
+  local e_value = extruder_e[current_extruder] - extruder_e_restart[current_extruder]
   if changed_frate == true then 
     output('G1 F' .. current_frate .. ' E' .. ff(e_value))
     changed_frate = false

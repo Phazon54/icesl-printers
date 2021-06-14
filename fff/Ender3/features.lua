@@ -7,7 +7,7 @@ bed_size_y_mm = 220
 bed_size_z_mm = 250
 
 -- Printer Extruder
-extruder_count = 1
+extruder_count = 2
 nozzle_diameter_mm = 0.4
 filament_diameter_mm_0 = 1.75
 
@@ -66,5 +66,5 @@ for i = 0, max_number_extruders, 1 do
   _G['extruder_temp_degree_c_' ..i] = extruder_temp_degree_c
   _G['extruder_temp_degree_c_'..i..'_min'] = extruder_temp_degree_c_min
   _G['extruder_temp_degree_c_'..i..'_max'] = extruder_temp_degree_c_max
-  _G['extruder_mix_count_'..i] = extruder_count
+  _G['extruder_mix_count_'..i] = 1
 end
