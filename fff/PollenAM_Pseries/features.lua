@@ -26,9 +26,9 @@ retract_mm_per_sec = 5
 
 -- Printing temperatures limits 
 -- (PLA as default)
-cold_end_temp_degree_c = 62 -- cold end /  temperature
-mixer_temp_degree_c = 167 -- extruder temperature
-extruder_temp_degree_c = 170 -- nozzle temperature
+cold_end_temp_degree_c = 62   -- cold end / temperature (glass transition temperature)
+mixer_temp_degree_c = 167     -- extruder temperature
+extruder_temp_degree_c = 170  -- nozzle temperature (melting temperature)
 
 extruder_temp_degree_c_min = 150
 extruder_temp_degree_c_max = 270
@@ -54,7 +54,7 @@ travel_speed_mm_per_sec = 50
 
 -- Misc default settings
 add_brim = true
-brim_distance_to_print = 1.0
+brim_distance_to_print_mm = 1.0
 brim_num_contours = 4
 
 enable_z_lift = true

@@ -2,15 +2,22 @@ name_en = "PETG"
 name_es = "PETG"
 name_fr = "PETG"
 
-extruder_temp_degree_c_0 = 235
+cold_end_temp_degree_c = 70  -- cold end / temperature (glass transition temperature)
+mixer_temp_degree_c = 210     -- extruder temperature
+extruder_temp_degree_c = 230  -- nozzle temperature (melting temperature)
+
+-- affecting settings to each extruder
+for i = 0, extruder_count-1, 1 do
+  _G['extruder_temp_degree_c_'..i] = extruder_temp_degree_c
+  _G['filament_priming_mm_'..i] = 1.5
+  _G['priming_mm_per_sec_'..i] = 5
+  _G['retract_mm_per_sec_'..i] = 5
+end
+
 bed_temp_degree_c = 70
 
 flow_multiplier_0 = 1.0
 speed_multiplier_0 = 1.0
-
-filament_priming_mm_0 = 6.0
-priming_mm_per_sec_0 = 25
-retract_mm_per_sec_0 = 25
 
 enable_fan = true
 fan_speed_percent = 50

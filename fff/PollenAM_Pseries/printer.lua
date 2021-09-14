@@ -91,6 +91,10 @@ function prime(extruder,e)
   return e + len
 end
 
+-- extruder management
+-- D23 -> "enable" extruder
+-- D23 T[tool_number] V[0-1 disable/enable] S[5(hardcoded?) activation speed]
+
 function select_extruder(extruder)
   -- enable tool
   output('D23 T' .. extruder .. 'V0')
@@ -184,6 +188,18 @@ end
 
 function progress(percent)
 end
+
+-- temperature management
+-- M104 / M109 T[tool_number] S[extruder_temp] C[mixer_temp]   H[nozzle_temp]
+--                            body/mid         cold-end/entry  nozzle
+--  \  /
+--  | |
+--  [C]
+--  | |
+--  [S]
+--  | |
+--  [H]
+--  \/
 
 function set_extruder_temperature(extruder,temperature)
   output('M104 T' .. extruder .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
