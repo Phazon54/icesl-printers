@@ -1,7 +1,5 @@
 -- Raise3D Pro2, by BAT - 06/05/2019
 
-version = 2
-
 -- custom settings in the UI
 tooltip_verbose_ON = 'enables comments to identify function calls inside the GCODE\n can be turned off smaller GCODE files'
 tooltip_low_motor_current = 'forces low motor current mode:\nactivates M906 E400 in order to set motor current at 400mA\ninstead of the default 650mA.\nThis is especially good for low temperature PLA or\nany material subject to heat creep'
@@ -108,11 +106,6 @@ tower_location_y_mm = bed_size_y_mm - 10 - tower_side_y_mm - tower_brim_num_cont
 
 -- various default option settings
 support_print_speed_mm_per_sec = 50
-
-enable_curved_covers_0 = false
-enable_curved_covers_1 = false
-enable_curved_covers_2 = false
-enable_curved_covers_3 = false
 
 for i = 0, max_number_extruders, 1 do
   _G['nozzle_diameter_mm_'..i] = nozzle_diameter_mm

@@ -17,23 +17,17 @@
 
 -- The output GCODE has a decent amount of comments, if no comments are needed verbose can be turned off from the custom setting "verbose_ON"
 
-
-version = 2
-
-
-function comment(text)
-  if verbose_ON then
-    output('; ' .. text)
-  end
-end
-
 -- variable initialization
+traveling = false
 swapping = false
+
 header_retraction_multi = 1
 first_select_call = 0
 
-current_z = 0
 current_extruder = -1
+current_x = 0
+current_y = 0
+current_z = 0
 
 extruder_e = {}
 extruder_e_restart = {}
@@ -41,31 +35,32 @@ retractlen = {}
 primelen = {}
 total_retracted_length= {}
 
-extruder_e[0] = 0
-extruder_e[1] = 0
-extruder_e_restart[0] = 0
-extruder_e_restart[1] = 0
-retractlen[0] = 0
-retractlen[1] = 0
-primelen[0] = 0
-primelen[1] = 0
-total_retracted_length[0] = 0
-total_retracted_length[1] = 0
+for i = 0, extruder_count -1 do
+  extruder_e[i] = 0.0
+  extruder_e_restart[i] = 0.0
+  retractlen[i] = 0.0
+  primelen[i] = 0.0
+  total_retracted_length[i] = 0.0
+end
 
-traveling = 0
+smart_retraction = false
+if retract_after_z > 0 then smart_retraction = true end -- disabling smart retraction if retract_after_z <= 0
 
--- disabling smart retraction if retract_after_z <= 0
-if retract_after_z > 0 then
-  smart_retraction = true
-else
-  smart_retraction = false
+function comment(text)
+  if verbose_ON then
+    output('; ' .. text)
+  end
+end
+
+-- correct z when using z_extra_height
+function inflate_z(z_value)
+  return z_value * (0.01 * (100 + z_extra_height))
 end
 
 -- extruders will be retracted of the filament_priming_mm length at the end of the header
 -- even if E = 0 due to G92 E0 command
 function header() 
   -- heating up: bed before extruders
-
   set_bed_temperature(bed_temp_degree_c)
   set_and_wait_bed_temperature(bed_temp_degree_c)
 
@@ -76,6 +71,7 @@ function header()
     set_and_wait_extruder_temperature(extruder, extruder_temp_degree_c[extruder])
   end
 
+  -- fan off
   output('M107')
 
   -- homing
@@ -86,18 +82,14 @@ function header()
   output('M82 ; use absolute distances for extrusion')
   output('G21 ; set units to millimeters')
   output('G90 ; use absolute coordinates')
-
-  output('G21 ; set units to millimeters')
-  output('M82 ; use absolute distances for extrusion')
   
   if low_motor_current then -- sets lower motor current (useful for heat creep issues)
   	output('M906 E400 ; forces motor current to 400mA to avoid heat creep')
   end
 
   -- purging
+  local header_purging_length = 25
   output('G1 Z15.0 F9000.00') -- bed moves away 15mm
-
-  header_purging_length = 25
   for _, extruder in pairs(extruders) do
     retractlen[extruder] = filament_priming_mm[extruder]*header_retraction_multi
     output('T' .. extruder)
@@ -124,15 +116,15 @@ function footer()
     set_extruder_temperature(extruder,0)
   end
   output('M140 S0') -- shut down heated bed
-  output('G91')
+  output('G91') -- relative positioning to finish printing session
   output('G1 E-1 F300') -- small retraction to avoid oozing on the finished print
   output('G1 Z+75 E-5 X-20 Y-20 F6000.0') -- relative displacement to avoid oozing on the finished print
   output('G28 X0 Y0') -- homing
   output('M221 T0 S100') -- reset flow to 100% for left extruder
   output('M221 T1 S100') -- reset flow to 100% for right extruder
-  output('M107') -- shut down fan
-  output('M84')
-  output('G90') 
+  output('M107') -- fan off
+  output('M84') -- disable stepper
+  output('G90') -- reset printer to absolute positioning
 
   local nb_extr = 0
   for _, extruder in pairs(extruders) do
@@ -152,7 +144,7 @@ function footer()
   output(';M106 S0')
 
   for _, extruder in pairs(extruders) do
-    len = filament_priming_mm[extruder]
+    local len = filament_priming_mm[extruder]
     output(';T' .. extruder)
     output(';G92 E0')
     output(';G1 F200 E10')
@@ -180,7 +172,7 @@ function retract(extruder,e)
     retractlen[extruder] = filament_priming_mm[extruder]*swap_length_multi - total_retracted_length[extruder]
     speed = extruder_swap_retract_speed_mm_per_sec * 60
   else
-    if smart_retraction and current_z < retract_after_z * (0.01 * (100 + z_extra_height)) then
+    if smart_retraction and current_z < inflate_z(retract_after_z) then
       comment('bypassing retraction due to smart retraction: ' .. z .. ' < ' .. retract_after_z * (0.01 * (100 + z_extra_height)))
       retractlen[extruder] = 0
     else
@@ -190,7 +182,7 @@ function retract(extruder,e)
     speed = retract_mm_per_sec[extruder] * 60
   end
   extruder_e[extruder] = e - retractlen[extruder]
-  output('G0 F' .. speed .. ' E' .. ff(extruder_e[extruder] - extruder_e_restart[extruder]))
+  output('G1 F' .. speed .. ' E' .. ff(extruder_e[extruder] - extruder_e_restart[extruder]))
   total_retracted_length[extruder] = total_retracted_length[extruder] + retractlen[extruder] -- needed if consecutive retractions happen
   -- THE ONES BELOW ARE ONLY FOR DEBUGGING
   --[[
@@ -211,8 +203,8 @@ function prime(extruder,e)
     extra_priming = extra_extruder_e_swap_restart
     speed = extruder_swap_retract_speed_mm_per_sec * 60
   else
-    if smart_retraction and current_z < retract_after_z * (0.01 * (100 + z_extra_height)) then
-      comment('bypassing priming due to smart retraction: ' .. z .. ' < ' .. retract_after_z * (0.01 * (100 + z_extra_height)))
+    if smart_retraction and current_z < inflate_z(retract_after_z) then
+      comment('bypassing priming due to smart retraction: ' .. z .. ' < ' .. inflate_z(retract_after_z))
       primelen[extruder] = 0
     else
       comment('priming')
@@ -222,7 +214,7 @@ function prime(extruder,e)
     speed = priming_mm_per_sec[extruder] * 60
   end
   extruder_e[extruder] = e + primelen[extruder]
-  output('G0 F' .. speed .. ' E' .. ff(extruder_e[extruder] + extra_priming - extruder_e_restart[extruder]))
+  output('G1 F' .. speed .. ' E' .. ff(extruder_e[extruder] + extra_priming - extruder_e_restart[extruder]))
   total_retracted_length[extruder] = total_retracted_length[extruder] - primelen[extruder] -- needed if consecutive retractions happen
   -- THE ONES BELOW ARE ONLY FOR DEBUGGING
   --[[
@@ -248,7 +240,7 @@ end
 
 function swap_extruder(from,to,x,y,z)
   swapping = true -- set to non-default value
-  traveling = 0 -- resetting travel identification variable
+  traveling = false -- resetting travel identification variable
   comment('swap_extruder')  
   retract(from, extruder_e[from])
   extruder_e[from] = extruder_e[from] + retractlen[from] -- adding back retractlen because the next retraction is not updating the e value of ice-sl enging 
@@ -291,7 +283,7 @@ function swapretraction_header_compensation()
 end
 
 function layer_start(zheight)
-  traveling = 0 -- resetting travel identification variable
+  traveling = false -- resetting travel identification variable
   if layer_id == 0 then
     -- forcing a swap retraction on the idle extruder since swap function is not called at startup
     if number_of_extruders == 2 then
@@ -307,44 +299,39 @@ function layer_start(zheight)
 end
 
 function layer_stop()
-  traveling = 0 -- resetting travel identification variable
+  traveling = false -- resetting travel identification variable
   e_reset()
   comment('(</layer>)')
 end
 
 function move_xyz(x,y,z)
-  if traveling == 0 then
-    traveling = 1 -- start traveling
+  if traveling == false then
+    traveling = true -- start traveling
     comment('travel')
   end
 
-  if x == current_x and xy_caching then
-    x_string = ''
-  else
-    current_x = x
-    x_string = (' X' .. f(x))
+  local x_string = ''
+  local y_string = ''
+  local z_string = ''
+
+  if not xy_caching then
+    if x ~= current_x then x_string = ' X' .. f(x) end
+    if y ~= current_y then y_string = ' Y' .. f(y) end
   end
 
-  if y == current_y and xy_caching then
-    y_string = ''
-  else
-    current_y = y
-    y_string = (' Y' .. f(y))
-  end
-
-  if z == current_z and z_caching then
-    z_string = ''
-  else
-    current_z = z
-    z_string = (' Z' .. ff(z * (0.01 * (100 + z_extra_height)) + z_offset))
+  if not z_caching then
+    if z ~= current_z then z_string = ' Z' .. ff(inflate_z(z) + z_offset) end
   end
 
   output('G0 F' .. f(current_frate) .. x_string .. y_string .. z_string)
+  current_x = x
+  current_y = y
+  current_z = z
 end
 
 function move_xyze(x,y,z,e)
-  if traveling == 1 then
-    traveling = 0 -- start path
+  if traveling == true then
+    traveling = false -- start path
     if path_is_perimeter then
       comment('TYPE:WALL-OUTER')
     else
@@ -360,36 +347,31 @@ function move_xyze(x,y,z,e)
   end
 
   extruder_e[current_extruder] = e
-  letter = 'E'
+  local e_value = extruder_e[current_extruder] - extruder_e_restart[current_extruder]
 
-  if x == current_x and xy_caching then
-    x_string = ''
-  else
-    current_x = x
-    x_string = (' X' .. f(x))
+  local x_string = ''
+  local y_string = ''
+  local z_string = ''
+
+  if not xy_caching then
+    if x ~= current_x then x_string = ' X' .. f(x) end
+    if y ~= current_y then y_string = ' Y' .. f(y) end
   end
 
-  if y == current_y and xy_caching then
-    y_string = ''
-  else
-    current_y = y
-    y_string = (' Y' .. f(y))
+  if not z_caching then
+    if z ~= current_z then z_string = ' Z' .. ff(inflate_z(z) + z_offset) end
   end
 
-  if z == current_z and z_caching then
-    z_string = ''
-  else
-    current_z = z
-    z_string = (' Z' .. ff(z * (0.01 * (100 + z_extra_height)) + z_offset))
-  end
-
-  output('G1 F' .. f(current_frate) .. x_string .. y_string .. z_string .. ' ' .. letter .. ff(e-extruder_e_restart[current_extruder]))
+  output('G1 F' .. f(current_frate) .. x_string .. y_string .. z_string .. ' E' .. ff(e_value))
+  current_x = x
+  current_y = y
+  current_z = z
 end
 
 function move_e(e)
   extruder_e[current_extruder] = e
-  letter = 'E'
-  output('G0 ' .. letter .. ff(e-extruder_e_restart[current_extruder]))
+  local e_value = extruder_e[current_extruder] - extruder_e_restart[current_extruder]
+  output('G1 E' .. ff(e_value))
 end
 
 function set_feedrate(feedrate)
