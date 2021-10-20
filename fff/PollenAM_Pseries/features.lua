@@ -9,7 +9,7 @@ bed_size_y_mm = bed_diameter
 bed_size_z_mm = 300
 
 -- Printer Extruder
-extruder_count = 1 -- max 4
+extruder_count = 4 -- max 4
 nozzle_diameter_mm = 0.4
 filament_diameter_mm = 3.0 -- Non applicable here. Only used for Icesl's statistics
 
@@ -30,7 +30,7 @@ cold_end_temp_degree_c = 62   -- cold end / temperature (glass transition temper
 mixer_temp_degree_c = 167     -- extruder temperature
 extruder_temp_degree_c = 170  -- nozzle temperature (melting temperature)
 
-extruder_temp_degree_c_min = 150
+extruder_temp_degree_c_min = 100
 extruder_temp_degree_c_max = 270
 
 bed_temp_degree_c = 60
@@ -38,15 +38,15 @@ bed_temp_degree_c_min = 0
 bed_temp_degree_c_max = 120
 
 -- Printing speed limits
-print_speed_mm_per_sec = 40
+print_speed_mm_per_sec = 30
 print_speed_mm_per_sec_min = 5
 print_speed_mm_per_sec_max = 200
 
-perimeter_print_speed_mm_per_sec = 30
+perimeter_print_speed_mm_per_sec = 25
 perimeter_print_speed_mm_per_sec_min = 5
 perimeter_print_speed_mm_per_sec_max = 200
 
-first_layer_print_speed_mm_per_sec = 20
+first_layer_print_speed_mm_per_sec = 10
 first_layer_print_speed_mm_per_sec_min = 5
 first_layer_print_speed_mm_per_sec_max = 50
 
@@ -61,10 +61,6 @@ enable_z_lift = true
 z_lift_mm = 0.5
 
 process_thin_features = false
-
--- Custom checkox to enable auto_bed_leveling
-add_checkbox_setting('auto_bed_leveling', 'Auto Bed Leveling','Use G29 Auto Leveling if the machine is equipped with one (BLTouch, Pinda, capacitive sensor, etc.)')
-auto_bed_leveling = false
 
 --#################################################
 

@@ -7,6 +7,7 @@ bed_origin_y = bed_size_y_mm/2
 current_z = 0.0
 
 current_extruder = 0
+prev_extruder = 1
 
 extruder_e = {}
 extruder_e_reset = {}
@@ -35,24 +36,34 @@ function e_to_mm_cube(e)
 end
 
 function header()
-  local auto_level_string = 'G29 ; auto bed levelling\nG0 F6200 X0 Y0 ; back to the origin to begin the purge '
-  local h = file('header.gcode')
+  output('G28 ; home all axes')
+  output('G90 ; use absolute coordinates')
+  output('M82 ; use absolute distances for extrusion')
+  output('M190 S' .. bed_temp_degree_c .. ' ; wait for bed temperature to be reached')
+  output('M107 ; turn off cooling fan')
+  output('G92 E0')
 
-  h = h:gsub( '<TOOLTEMP>', extruder_temp_degree_c[extruders[0]] )
-  h = h:gsub( '<HBPTEMP>', bed_temp_degree_c )
-
-  if auto_bed_leveling == true then
-    h = h:gsub( '<BEDLVL>', auto_level_string )
-  else
-    h = h:gsub( '<BEDLVL>', "G0 F6200 X0 Y0" )
-  end
-  output(h)
   current_frate = travel_speed_mm_per_sec * 60
   changed_frate = true
 end
 
 function footer()
-  output(file('footer.gcode'))
+  output('G92 E0')
+  output('M107 ; fan off')
+  output('; turn off all extruders heaters')
+  output('M104 T1 S0 H0')
+  output('M104 T2 S0 H0')
+  output('M104 T3 S0 H0')
+  output('M104 T4 S0 H0')
+  output('; turn off all mixers')
+  output('D23 T1 V0')
+  output('D23 T2 V0')
+  output('D23 T3 V0')
+  output('D23 T4 V0')
+  output('M140 S0 ;turn off bed')
+  output('G1 Z300 X140 Y0 F1200 ; present print')
+  output('G90 ; absolute positioning')
+  output('M82 ; absolute extrusion')
 end
 
 function layer_start(zheight)
@@ -97,8 +108,13 @@ end
 
 function select_extruder(extruder)
   -- enable tool
-  output('D23 T' .. extruder .. 'V0')
-  output('D23 T' .. extruder .. 'V1 S5')
+  output('D23 T' .. prev_extruder .. ' V0')
+  output('D23 T' .. extruder + 1 .. ' V1 S5')
+  output('T' .. extruder + 1)
+  output('M104 S' .. mixer_temp_degree_c .. ' C' .. cold_end_temp_degree_c .. ' H' .. extruder_temp_degree_c[extruders[0]] .. ' ; set temperature')
+  output('M109 S' .. mixer_temp_degree_c .. ' C' .. cold_end_temp_degree_c .. ' H' .. extruder_temp_degree_c[extruders[0]] .. ' ; wait for temperature to be reached')
+  current_extruder = extruder
+  prev_extruder = extruder + 1
 end
 
 function swap_extruder(from,to,x,y,z)
@@ -107,11 +123,10 @@ function swap_extruder(from,to,x,y,z)
 
   -- swap extruder
   output('G92 E0')
-  output('D23 T' .. from .. 'V0')
-  output('D23 T' .. to .. 'V1 S5')
-  output('T' .. to)
+  output('D23 T' .. from + 1 .. ' V0')
+  output('D23 T' .. to + 1 .. ' V1 S5')
+  output('T' .. to + 1)
   output('G92 E0')
-
 
   current_extruder = to
   current_frate = travel_speed_mm_per_sec * 60
@@ -141,7 +156,7 @@ end
 
 function move_xyze(x,y,z,e)
   extruder_e[current_extruder] = e - extruder_e_swap[current_extruder]
-  local e_value = extruder_e[current_extruder] - extruder_e_restart[current_extruder]
+  local e_value = extruder_e[current_extruder] - extruder_e_reset[current_extruder]
   local centered_x = x - bed_origin_x
   local centered_y = y - bed_origin_y
   if z == current_z then
@@ -164,7 +179,7 @@ end
 
 function move_e(e)
   extruder_e[current_extruder] = e - extruder_e_swap[current_extruder]
-  local e_value = extruder_e[current_extruder] - extruder_e_restart[current_extruder]
+  local e_value = extruder_e[current_extruder] - extruder_e_reset[current_extruder]
   if changed_frate == true then 
     output('G1 F' .. current_frate .. ' E' .. ff(e_value))
     changed_frate = false
@@ -202,11 +217,11 @@ end
 --  \/
 
 function set_extruder_temperature(extruder,temperature)
-  output('M104 T' .. extruder .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
+  output('M104 T' .. extruder + 1 .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
 end
 
 function set_and_wait_extruder_temperature(extruder,temperature)
-  output('M109 T' .. extruder .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
+  output('M109 T' .. extruder + 1 .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
 end
 
 function set_fan_speed(speed)
