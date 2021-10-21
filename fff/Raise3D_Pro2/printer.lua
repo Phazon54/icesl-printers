@@ -173,7 +173,7 @@ function retract(extruder,e)
     speed = extruder_swap_retract_speed_mm_per_sec * 60
   else
     if smart_retraction and current_z < inflate_z(retract_after_z) then
-      comment('bypassing retraction due to smart retraction: ' .. z .. ' < ' .. retract_after_z * (0.01 * (100 + z_extra_height)))
+      comment('bypassing retraction due to smart retraction: z < ' .. inflate_z(retract_after_z))
       retractlen[extruder] = 0
     else
       comment('retract')
@@ -204,7 +204,7 @@ function prime(extruder,e)
     speed = extruder_swap_retract_speed_mm_per_sec * 60
   else
     if smart_retraction and current_z < inflate_z(retract_after_z) then
-      comment('bypassing priming due to smart retraction: ' .. z .. ' < ' .. inflate_z(retract_after_z))
+      comment('bypassing priming due to smart retraction: z < ' .. inflate_z(retract_after_z))
       primelen[extruder] = 0
     else
       comment('priming')

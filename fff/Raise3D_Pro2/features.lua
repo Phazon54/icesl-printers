@@ -13,62 +13,53 @@ tooltip_extra_extruder_e_restart = 'Extra extrusion distance [mm]\napplied after
 tooltip_extra_extruder_e_swap_restart = 'Extra extrusion distance [mm]\napplied after each retract, can be positive or negative\nuseful to remove respectively voids or blobs caused by extruder swap\nAPPLIED TO BOTH EXTRUDERS'
 tooltip_swap_length_multi = 'swap retraction/priming multiplier\nThis value is multiplied by the priming length\nenables a custom retraction length on extruder swap\nAPPLIED TO BOTH EXTRUDERS'
 
+verbose_ON = true                       -- Verbose Gcode
+low_motor_current = false               -- low current mode for motors
+CompHeaderActiveExtRectraction = false  -- Header retract compensation
+z_caching = true                        -- Z caching (for "lighter Gcode")
+xy_caching = false                      -- XY caching (for "lighter Gcode")
+z_offset = 0.0                          -- Z offset (extra distance between build plate and print)
+z_extra_height = 0.0                    -- Z inflation/compression (for tuning layer squish, similar effect to changing flow multiplier)
+retract_after_z = 0.0                   -- Retract only after this Z height (will disable all retracts below set value)
+extra_extruder_e_restart = 0.0          -- Extra priming
+extra_extruder_e_swap_restart = 0.0     -- Extra priming/purge after a swap
+swap_length_multi = 3                   -- Retraction multiplier for retractions during an extruder swap
+
 add_checkbox_setting('verbose_ON', 'Enables comment lines in the gcode file', tooltip_verbose_ON)
 add_checkbox_setting('low_motor_current', 'Forces low extruder motor current', tooltip_low_motor_current)
 add_checkbox_setting('CompHeaderActiveExtRectraction', 'Compensate header retraction on active extruder', tooltip_CompHeaderActiveExtRectraction)
 add_checkbox_setting('z_caching', 'Enable Z caching', tooltip_z_caching)
 add_checkbox_setting('xy_caching', 'Enable XY caching', tooltip_xy_caching)
-add_setting('z_offset', 'Z axis offset [mm]', -0.1, 2, tooltip_z_offset)
+add_setting('z_offset', 'Z axis offset [mm]', -0.1, 2.0, tooltip_z_offset)
 add_setting('z_extra_height', 'extra Z inflation [%] (not affecting flow) ', -50, 50, tooltip_z_extra_height)
 add_setting('retract_after_z', 'minimum Z height for retraction [mm]', 0, 1, tooltip_retract_after_z)
 add_setting('extra_extruder_e_restart', 'extra restart distance after retraction [mm]', -1, 1, tooltip_extra_extruder_e_restart)
 add_setting('extra_extruder_e_swap_restart', 'extra restart distance after extruder swap [mm]', -2, 2, tooltip_extra_extruder_e_swap_restart)
-add_setting('swap_length_multi','swap retraction/priming multiplier',0,10,tooltip_swap_length_multi)
+add_setting('swap_length_multi','swap retraction/priming multiplier', 0, 10, tooltip_swap_length_multi)
 
--- default values for the custom settings ...could be added at the end of the add_setting commands
-verbose_ON = true -- enabled by default since GCODE file dimensions should not be an issue
-low_motor_current = false  -- not enabled by default as it can be enabled from printer settings
-CompHeaderActiveExtRectraction = false -- not compensating header retraction on active extruder
-z_caching = true  -- GCODE dimensions reduced by default
-xy_caching = false  -- GCODE dimensions reduced by default
-z_offset = 0.0  --extra distance between build plate and head on first layer
-                             --  it does not affect the layer height or extruded amount
-z_extra_height = 0.0  -- Z inflation/compression applied on each layer. Useful for tuning purposes if
-                              -- the layers need to be squeezed or spaced more to get better quality
-                              --  it does not affect the layer height or extruded amount
-                              -- it's a very similar setting to extrusion flow multiplier
-retract_after_z = 0.0  -- retract only after this height
-                             --  retraction on the first layer can result in adhesion problems
-                             --  not having retraction on the first layer doesn't USUALLY affect print quality
-extra_extruder_e_restart = 0.0 -- extra restart distance to fix eventual blobs or voids due to retraction
-                          -- can be positive or negative: positive useful to fix voids, negative to fix blobs
-extra_extruder_e_swap_restart = 0.0 -- extra restart distance to fix eventual blobs or voids due to extruder swap
-                          -- can be positive or negative: positive useful to fix voids, negative to fix blobs
-swap_length_multi = 3 -- on extruder swap, a retraction 3 times bigger than normal is usually enough
+--#################################################
 
--- slicing algorithm settings
-xy_mm_per_pixels = 0.05
-xy_max_deviation_mm = 0.05
-tile_size_mm = 30
-
--- geometric settings for printer
+-- Build Area dimensions
 bed_size_x_mm = 305
 bed_size_y_mm = 305
 bed_size_z_mm = 300
 
--- nozzle & extruder settings
+-- Extruders default settings
 extruder_count = 2
 nozzle_diameter_mm = 0.4
 filament_diameter_mm = 1.75
-z_offset = 0.0
 
-filament_priming_mm = 4.0
+-- Retraction settings
+filament_priming_mm = 1.5
 priming_mm_per_sec = 30
 retract_mm_per_sec = 30
 
-z_layer_height_mm_min = 0.01
+-- Layer height limits
+z_layer_height_mm = 0.2
+z_layer_height_mm_min = nozzle_diameter_mm * 0.15
 z_layer_height_mm_max = nozzle_diameter_mm * 0.75
 
+-- Printing temperatures limits
 extruder_temp_degree_c = 210
 extruder_temp_degree_c_min = 150
 extruder_temp_degree_c_max = 270
@@ -77,6 +68,7 @@ bed_temp_degree_c = 55
 bed_temp_degree_c_min = 0
 bed_temp_degree_c_max = 110
 
+-- Printing speed limits
 print_speed_mm_per_sec = 50
 print_speed_mm_per_sec_min = 5
 print_speed_mm_per_sec_max = 300
@@ -95,18 +87,35 @@ first_layer_print_speed_mm_per_sec_max = 80
 
 travel_speed_mm_per_sec = 100
 
--- prime tower and swap setting
+support_print_speed_mm_per_sec = 50
+
+-- Purge Tower
 gen_tower = false
-tower_brim_num_contours = 5
 tower_side_x_mm = 10
 tower_side_y_mm = 10
-tower_at_location = true
+tower_brim_num_contours = 5
+
+tower_at_location = true -- Requires extruder to swap material at a given location,
+                         -- this also forces the tower to appear at this same location.
 tower_location_x_mm = bed_size_x_mm - 10 - tower_side_x_mm - tower_brim_num_contours * nozzle_diameter_mm
 tower_location_y_mm = bed_size_y_mm - 10 - tower_side_y_mm - tower_brim_num_contours * nozzle_diameter_mm
 
--- various default option settings
-support_print_speed_mm_per_sec = 50
+-- Misc Settings
+add_brim = true
+brim_distance_to_print_mm = 1.0
+brim_num_contours = 4
 
+add_raft = false
+raft_spacing = 1.0
+
+gen_supports = false
+support_extruder = 0
+
+z_lift_mm = 0.6
+
+--#################################################
+
+-- Internal procedure to fill brushes / extruder settings
 for i = 0, max_number_extruders, 1 do
   _G['nozzle_diameter_mm_'..i] = nozzle_diameter_mm
   _G['filament_diameter_mm_'..i] = filament_diameter_mm
