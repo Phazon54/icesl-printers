@@ -4,10 +4,10 @@ name_fr = "Haute qualité"
 
 z_layer_height_mm = 0.12
 
-print_speed_mm_per_sec = 50
-perimeter_print_speed_mm_per_sec = 30
+print_speed_mm_per_sec = 40
+perimeter_print_speed_mm_per_sec = 20
 first_layer_print_speed_mm_per_sec = 20
-travel_speed_mm_per_sec = 120
+travel_speed_mm_per_sec = 80
 
 num_shells_0 = 3
 cover_thickness_mm_0 = 1.2

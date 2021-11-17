@@ -11,7 +11,9 @@ bed_size_z_mm = 300
 -- Printer Extruder
 extruder_count = 4 -- max 4
 nozzle_diameter_mm = 0.4
-filament_diameter_mm = 3.0 -- Non applicable here. Only used for Icesl's statistics
+filament_diameter_mm = 5.5 -- Non applicable here. 
+                           -- Only used for Icesl's statistics and to increase flow 
+                           -- ("magic value" to have flow multipliers set to 1 (100) in profile for ease of use).
 
 -- Layer height limits
 z_layer_height_mm = 0.2
@@ -19,16 +21,16 @@ z_layer_height_mm_min = nozzle_diameter_mm * 0.10
 z_layer_height_mm_max = nozzle_diameter_mm * 0.75
 
 -- Retraction Settings
-filament_priming_mm = 1.5
+filament_priming_mm = 0 --1.5
 --over_priming_mm = 0.02829
 priming_mm_per_sec = 5
 retract_mm_per_sec = 5
 
 -- Printing temperatures limits 
 -- (PLA as default)
-cold_end_temp_degree_c = 62   -- cold end / temperature (glass transition temperature)
-mixer_temp_degree_c = 167     -- extruder temperature
-extruder_temp_degree_c = 170  -- nozzle temperature (melting temperature)
+cold_end_temp_degree_c = 67   -- cold end / temperature (glass transition temperature)
+mixer_temp_degree_c = 170     -- extruder temperature
+extruder_temp_degree_c = 210  -- nozzle temperature (melting temperature)
 
 extruder_temp_degree_c_min = 100
 extruder_temp_degree_c_max = 270

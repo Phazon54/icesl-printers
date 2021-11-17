@@ -9,7 +9,7 @@ extruder_temp_degree_c = 240  -- nozzle temperature (melting temperature)
 -- affecting settings to each extruder
 for i = 0, extruder_count-1, 1 do
   _G['extruder_temp_degree_c_'..i] = extruder_temp_degree_c
-  _G['filament_priming_mm_'..i] = 1.5
+  _G['filament_priming_mm_'..i] = 0
   _G['priming_mm_per_sec_'..i] = 5
   _G['retract_mm_per_sec_'..i] = 5
 end
