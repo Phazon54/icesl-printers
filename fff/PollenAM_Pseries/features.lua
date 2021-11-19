@@ -64,6 +64,13 @@ z_lift_mm = 0.5
 
 process_thin_features = false
 
+for i = 0, extruder_count-1 do
+  _G['cold_end_temp_degree_c_' ..i] = cold_end_temp_degree_c
+  add_setting('cold_end_temp_degree_c_' .. i, 'Cold End temperature for extruder ' .. i+1, 0, extruder_temp_degree_c)
+  _G['mixer_temp_degree_c_' ..i] = mixer_temp_degree_c
+  add_setting('mixer_temp_degree_c_' .. i, 'Mixer temperature for extruder ' .. i+1, 0, extruder_temp_degree_c)
+end
+
 --#################################################
 
 -- Internal procedure to fill brushes / extruder settings
@@ -73,6 +80,8 @@ for i = 0, max_number_extruders, 1 do
   _G['filament_priming_mm_'..i] = filament_priming_mm
   _G['priming_mm_per_sec_'..i] = priming_mm_per_sec
   _G['retract_mm_per_sec_'..i] = retract_mm_per_sec
+  _G['cold_end_temp_degree_c_' ..i] = cold_end_temp_degree_c
+  _G['mixer_temp_degree_c_' ..i] = mixer_temp_degree_c
   _G['extruder_temp_degree_c_' ..i] = extruder_temp_degree_c
   _G['extruder_temp_degree_c_'..i..'_min'] = extruder_temp_degree_c_min
   _G['extruder_temp_degree_c_'..i..'_max'] = extruder_temp_degree_c_max

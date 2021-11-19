@@ -7,16 +7,21 @@ bed_origin_y = bed_size_y_mm/2
 current_z = 0.0
 
 current_extruder = 0
-prev_extruder = 1
+n_selected_extruder = 0 -- counter to track the selected / prepared extruders
+
+temp_string = ''
+mixer_string = ''
 
 extruder_e = {}
 extruder_e_reset = {}
 extruder_e_swap = {}
+extruder_stored = {}
 
 for i = 0, extruder_count -1 do
   extruder_e[i] = 0.0
   extruder_e_reset[i] = 0.0
   extruder_e_swap[i] = 0.0
+  extruder_stored[i] = false
 end
 
 changed_frate = false
@@ -41,7 +46,13 @@ function header()
   output('M82 ; use absolute distances for extrusion')
   output('M190 S' .. bed_temp_degree_c .. ' ; wait for bed temperature to be reached')
   output('M107 ; turn off cooling fan')
-  output('G92 E0')
+  output('G92 E0\n')
+
+  comment("set temperatures")
+  output(temp_string)
+
+  comment("set mixers")
+  output(mixer_string)
 
   current_frate = travel_speed_mm_per_sec * 60
   changed_frate = true
@@ -51,15 +62,13 @@ function footer()
   output('G92 E0')
   output('M107 ; fan off')
   output('; turn off all extruders heaters')
-  output('M104 T1 S0 H0')
-  output('M104 T2 S0 H0')
-  output('M104 T3 S0 H0')
-  output('M104 T4 S0 H0')
+  for e in pairs(extruders) do
+    output('M104 T' .. e+1 .. ' S0 H0 C0')
+  end
   output('; turn off all mixers')
-  output('D23 T1 V0')
-  output('D23 T2 V0')
-  output('D23 T3 V0')
-  output('D23 T4 V0')
+  for e in pairs(extruders) do
+    output(set_mixer(e, false))
+  end
   output('M140 S0 ;turn off bed')
   output('G1 Z300 X140 Y0 F1200 ; present print')
   output('G90 ; absolute positioning')
@@ -79,42 +88,77 @@ function layer_stop()
 end
 
 function retract(extruder,e)
-  comment('retract')
   local len   = filament_priming_mm[extruder]
   local speed = retract_mm_per_sec[extruder] * 60
   local e_value = e - extruder_e_swap[current_extruder]
-  output('G1 F' .. speed .. ' E' .. ff(e_value - extruder_e_reset[current_extruder]) - len)
-  extruder_e[current_extruder] = e - len
-  current_frate = speed
-  changed_frate = true
+  if extruder_stored[extruder] then 
+    comment('retract skipped')
+  else
+    comment('retract')
+    output('G1 F' .. speed .. ' E' .. ff(e_value - extruder_e_reset[current_extruder]) - len)
+    extruder_e[current_extruder] = e - len
+    current_frate = speed
+    changed_frate = true
+  end
   return e - len
 end
 
 function prime(extruder,e)
-  comment('prime')
   local len   = filament_priming_mm[extruder]
   local speed = priming_mm_per_sec[extruder] * 60
   local e_value = e - extruder_e_swap[current_extruder]
-  output('G1 F' .. speed .. ' E' .. ff(e_value - extruder_e_reset[current_extruder]) + len)
-  extruder_e[current_extruder] = e + len
-  current_frate = speed
-  changed_frate = true
+  if extruder_stored[extruder] then 
+    comment('prime skipped')
+    extruder_stored[extruder] = false
+  else
+    comment('prime')
+    output('G1 F' .. speed .. ' E' .. ff(e_value - extruder_e_reset[current_extruder]) + len)
+    extruder_e[current_extruder] = e + len
+    current_frate = speed
+    changed_frate = true
+  end
   return e + len
 end
 
--- extruder management
--- D23 -> "enable" extruder
+-- Warning!
+-- The extruder numbers expected by the machine starts at 1 !
+-- Each call / reference to the extruder (T) must be corrected to reflect this (T+1)!
+
+-- Mixer management
 -- D23 T[tool_number] V[0-1 disable/enable] S[5(hardcoded?) activation speed]
+function set_mixer(extruder, enable, speed)
+  local m_s = 'D23 T' .. extruder+1 .. ' V' .. (enable and 1 or 0)
+  speed = speed or 5 -- a speed of 5 when enabling the mixer seems to be hardcoded in manufacturer's profiles
+  if enable == true then 
+    m_s = m_s .. ' S' .. speed
+  end
+  return m_s
+end
 
 function select_extruder(extruder)
-  -- enable tool
-  output('D23 T' .. prev_extruder .. ' V0')
-  output('D23 T' .. extruder + 1 .. ' V1 S5')
-  output('T' .. extruder + 1)
-  output('M104 S' .. mixer_temp_degree_c .. ' C' .. cold_end_temp_degree_c .. ' H' .. extruder_temp_degree_c[extruders[0]] .. ' ; set temperature')
-  output('M109 S' .. mixer_temp_degree_c .. ' C' .. cold_end_temp_degree_c .. ' H' .. extruder_temp_degree_c[extruders[0]] .. ' ; wait for temperature to be reached')
+  n_selected_extruder = n_selected_extruder + 1
+
+  -- number_of_extruders is an IceSL internal Lua global variable 
+  -- which is used to know how many extruders will be used for a print job
+  if n_selected_extruder == number_of_extruders then
+    -- enable mixer for first used extruder
+    mixer_string = mixer_string .. set_mixer(extruder, true) .. '\n'
+    -- enable extruder
+    output('T' .. extruder + 1)
+    -- prepare temperature string for header
+    temp_string = temp_string .. 'M104 T' .. extruder+1 .. ' S' .. _G['mixer_temp_degree_c_'..extruder] .. ' C' .. _G['cold_end_temp_degree_c_'..extruder] .. ' H' .. extruder_temp_degree_c[extruder] .. '\n'
+    temp_string = temp_string .. 'M109 T' .. extruder+1 .. ' S' .. _G['mixer_temp_degree_c_'..extruder] .. ' C' .. _G['cold_end_temp_degree_c_'..extruder] .. ' H' .. extruder_temp_degree_c[extruder] .. '\n'
+    extruder_stored[extruder] = false
+  else
+    -- disable mixer for non-used extruders
+    mixer_string = mixer_string .. set_mixer(extruder, false) .. '\n'
+    -- prepare temperature string for header
+    temp_string = temp_string .. 'M104 T' .. extruder+1 .. ' S' .. _G['mixer_temp_degree_c_'..extruder] .. ' C' .. _G['cold_end_temp_degree_c_'..extruder] .. ' H' .. extruder_temp_degree_c[extruder] .. '\n'
+    -- skip unnecessary prime/retract
+    extruder_stored[extruder] = true
+  end
+
   current_extruder = extruder
-  prev_extruder = extruder + 1
 end
 
 function swap_extruder(from,to,x,y,z)
@@ -123,8 +167,11 @@ function swap_extruder(from,to,x,y,z)
 
   -- swap extruder
   output('G92 E0')
-  output('D23 T' .. from + 1 .. ' V0')
-  output('D23 T' .. to + 1 .. ' V1 S5')
+  -- disable mixer of previous extruder
+  output(set_mixer(from, false))
+  -- enable mixer for current extruder
+  output(set_mixer(to, true))
+  -- enable extruder
   output('T' .. to + 1)
   output('G92 E0')
 
@@ -217,11 +264,11 @@ end
 --  \/
 
 function set_extruder_temperature(extruder,temperature)
-  output('M104 T' .. extruder + 1 .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
+  output('M104 T' .. extruder + 1 .. ' S' .. _G['mixer_temp_degree_c_'..extruder] ..' C' .. _G['cold_end_temp_degree_c_'..extruder] .. ' H' .. temperature)
 end
 
 function set_and_wait_extruder_temperature(extruder,temperature)
-  output('M109 T' .. extruder + 1 .. 'S' .. mixer_temp_degree_c ..' C' .. cold_end_temp_degree_c' H' .. temperature)
+  output('M109 T' .. extruder + 1 .. ' S' .. _G['mixer_temp_degree_c_'..extruder] ..' C' .. _G['cold_end_temp_degree_c_'..extruder] .. ' H' .. temperature)
 end
 
 function set_fan_speed(speed)
