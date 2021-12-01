@@ -72,8 +72,10 @@ Return the current position of the "mobiles" (axis carriage) along their axis.
 # D6 (change Delta rods length)
 `D6 A[value] B[value] C[value]`
 
-# D7 (change full-steps/mm)
-`D7 E[value] F[value] G[value] H[value] S[value]`
+# D7 (change extruders full-steps/mm)
+`D7 [extruder letter - E,F,G,H][value]`
+
+> Note: Default value seems to be 312.5
 
 # D8 (change microstepping)
 `D8 [axis letter - E,F,G,H,S] T[value]`
@@ -162,7 +164,7 @@ Limit speed change between 2 axes movement command.
 
 > Note: enable values are either 0 (disabled) or 1 (enabled).
 
-# D27 (set door lockin protection)
+# D27 (set door locking protection)
 `D27 V[enable]`
 
 > Note: enable values are either 0 (disabled) or 1 (enabled).
@@ -183,7 +185,8 @@ Limit speed change between 2 axes movement command.
 # D31 (set bed lighting)
 `D31 V[value]`
 
-# D32 ()
+# D32 (macro to lock doors)
+Similar to `D28 V1`
 
 # D33 (set current Z pos as Z0)
 

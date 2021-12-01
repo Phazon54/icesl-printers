@@ -62,11 +62,11 @@ function footer()
   output('G92 E0')
   output('M107 ; fan off')
   output('; turn off all extruders heaters')
-  for e in pairs(extruders) do
-    output('M104 T' .. e+1 .. ' S0 H0 C0')
+  for e = 1 , extruder_count do -- TODO make this related to extruder used to avoid useless calls
+    output('M104 T' .. e ..' S0 H0 C0')
   end
   output('; turn off all mixers')
-  for e in pairs(extruders) do
+  for e = 1 , extruder_count do
     output(set_mixer(e, false))
   end
   output('M140 S0 ;turn off bed')
