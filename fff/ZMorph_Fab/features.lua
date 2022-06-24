@@ -11,32 +11,23 @@ bed_size_z_mm = 165
 -- Type of extruder
 -- 0: Single 1.75mm
 -- 1: Single 3.00mm
--- 2: Dual PRO (mixing)
--- 3: Dualhead
--- 4: Thick Paste extruder (not supported yet)
+-- 2: Dualhead
+-- 3: Dual PRO (mixing)
 extruder_type = 0
+
+-- number of extruders
+--can also be using to enable virtual extruders for differents printing settings
+-- or using a mixing extruder as a "normal" multi-extruder
+extruder_count = 1
+
+-- number of inputed filament in the nozzle (mixing nozzle)
+nb_input = 1
 
 nozzle_diameter_mm = 0.4
 filament_diameter_mm = 1.75
 
-extruder_count = 1
-nb_input = 1
-
--- Specific settings for each extruder type
-if extruder_type == 0 then -- Single 1.75mm
-elseif extruder_type == 1 then -- Single 3.00mm
-  filament_diameter_mm = 3.0
-elseif extruder_type == 2 then -- Dual PRO (mixing)
-  extruder_count = 2 -- This can also be set to 2 to use the Dual Pro extruder (mixing extruder) like a "regular" multi-material extruder
-  nb_input = 2 -- number of inputed filament in the nozzle
-  extruder_purge_volume_mm3 = 10 -- volume of the needed purge between each material change
-elseif extruder_type == 3 then -- Dualhead
-  extruder_count = 2
---elseif extruder_type == 4 then -- Thick Paste extruder
-end                    
-
 -- Retraction Settings
-filament_priming_mm = 3.0 -- between 2 and 5mm
+filament_priming_mm = 2.5 -- between 2 and 5mm
 priming_mm_per_sec = 100
 retract_mm_per_sec = 100
 extruder_swap_retract_mm = filament_priming_mm
@@ -77,12 +68,31 @@ travel_speed_mm_per_sec = 120
 print_speed_microlayers_mm_per_sec = 40
 mixing_shield_speed_multiplier = 1
 
--- Misc default settings
-enable_fit_single_path = true
-path_width_speed_adjustement_exponent = 1
+-- Specific settings for each extruder type
+if extruder_type > 0 then
+  if extruder_type == 1 then -- Single 3.00mm
+    filament_diameter_mm = 3.0
+  elseif extruder_type == 2 then -- Dualhead
+    extruder_count = 2
+  elseif extruder_type == 3 then -- Dual PRO (mixing)
+    extruder_purge_volume_mm3 = 10
+    extruder_count = 1
+    nb_input = 2
+  end
+end
 
-gen_shield = true
-shield_distance_to_part_mm = 2
+-- Misc default settings
+add_brim = true
+brim_distance_to_print_mm = 2.0
+brim_num_contours = 3
+
+enable_z_lift = true
+z_lift_mm = 0.4
+
+if nb_input > 1 then  
+  gen_shield = true
+  shield_distance_to_part_mm = 2
+end
 
 -- "regular" multi-material mode (DualHead extruder)
 if extruder_count > 1 then 
@@ -100,13 +110,6 @@ if extruder_count > 1 then
     tower_location_y_mm = bed_size_y_mm - (tower_side_y_mm / 2) - ((tower_brim_num_contours * z_layer_height_mm) * 2) - purge_tower_offset
   end
 end
-
-travel_max_length_without_retract = 1
-extruder_swap_zlift_mm = 0
-
-flow_dampener_path_length_start_mm = 1
-flow_dampener_path_length_end_mm = 1
-flow_dampener_e_length_mm = 3
 
 --#################################################
 
