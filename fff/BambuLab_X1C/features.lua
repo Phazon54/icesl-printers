@@ -21,8 +21,6 @@ priming_mm_per_sec = 30.0
 retract_mm_per_sec = 30.0
 extruder_swap_retract_length_mm = 2.0
 extruder_swap_retract_speed_mm_per_sec = 30.0
-enable_z_lift = true
-z_lift_mm = 0.4
 
 -- Printing temperatures limits (defaults are for PLA)
 extruder_temp_degree_c = 220
@@ -117,6 +115,9 @@ path_width_speed_adjustment_exponent = 1.5
 add_brim = true
 brim_distance_to_print_mm = 2.0
 brim_num_contours = 3
+
+enable_z_lift = true
+z_lift_mm = 0.4
 
 -- default filament infos (when using "custom" profile)
 name_en = "PLA"
