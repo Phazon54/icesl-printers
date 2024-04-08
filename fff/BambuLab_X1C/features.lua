@@ -44,6 +44,10 @@ end
 bed_temp_degree_c_min = 0
 bed_temp_degree_c_max = 120
 
+-- Air filtering
+add_checkbox_setting('air_filter', 'Enable air filter', 'Enable the air filter system, if available on the machine')
+air_filter = false
+
 -- Printing speed limits
 print_speed_mm_per_sec = 300
 print_speed_mm_per_sec_min = 5

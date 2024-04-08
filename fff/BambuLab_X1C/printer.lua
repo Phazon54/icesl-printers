@@ -120,9 +120,14 @@ function header()
   output("; filament_used_g : \t" .. f(vol_to_mass(e_to_mm_cube(filament_diameter_mm[0], filament_tot_length_mm[0]), filament_density/1000)) )
   output("; estimated_print_time_s : \t" .. time_sec)
   output("")
+
+  if air_filter then
+    output('M106 P3 S170') -- ~70%
+  end
 end
 
 function footer()
+  output('M106 P3 S0') -- turn off filter fan
 end
 
 function layer_start(zheight)
@@ -196,6 +201,7 @@ function select_extruder(extruder)
 end
 
 function swap_extruder(from,to,x,y,z)
+  output('M106 P3 S0') -- turn off chamber fan
 end
 
 function move_xyz(x,y,z)
@@ -259,6 +265,15 @@ function set_fan_speed(speed)
   if speed ~= current_fan_speed then
     output('M106 S'.. math.floor(255 * speed/100))
     current_fan_speed = speed
+  end
+
+  -- air filter fan management
+  if bed_temp_degree_c > 55 then 
+    output('M106 P3 S200')
+  elseif bed_temp_degree_c > 50 then 
+    output('M106 P3 S150')
+  elseif bed_temp_degree_c > 45 then 
+    output('M106 P3 S50')
   end
 end
 
