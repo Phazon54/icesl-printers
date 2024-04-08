@@ -1,6 +1,8 @@
 -- BambuLab X1C Profile
 -- Bedell Pierre 2024/02/08
 
+-- List of Bambu specifi Gcodes: https://forum.bambulab.com/t/bambu-lab-x1-specific-g-code/666
+
 extruder_e = 0
 extruder_e_restart = 0
 
@@ -14,19 +16,19 @@ processing = false
 path_type = 2 -- 1:default, 2:Craftware, 3:Prusa/Super Slicer, 4:Cura
 
 path_tag = {
-  --{ 'default',  'Craftware',              'Prusa/Super Slicer',       'Cura'            }
-  { ';travel',    ';segType:Travel',        '',                         ''                },
-  { ';perimeter', ';segType:Perimeter',     ';TYPE:External perimeter', ';TYPE:WALL-OUTER'},
-  { ';shell',     ';segType:HShell',        ';TYPE:Internal perimeter', ';TYPE:WALL-INNER'},
-  { ';cover',     ';segType:Infill',        ';TYPE:Solid infill',       ';TYPE:FILL'      },
-  { ';infill',    ';segType:Infill',        ';TYPE:Internal infill',    ';TYPE:FILL'      },
-  { ';gapfill',   ';segType:Infill',        ';TYPE:Gap fill',           ';TYPE:FILL'      },
-  { ';bridge',    ';segType:SupportTouch',  ';TYPE:Overhang perimeter', ';TYPE:WALL-OUTER'},
-  { ';support',   ';segType:Support',       ';TYPE:Support material',   ';TYPE:SUPPORT'   },
-  { ';brim',      ';segType:Skirt',         ';TYPE:Skirt',              ';TYPE:SKIRT'     },
-  { ';raft',      ';segType:Raft',          ';TYPE:Skirt',              ';TYPE:SKIRT'     },
-  { ';shield',    ';segType:Pillar',        ';TYPE:Skirt',              ';TYPE:SKIRT'     },
-  { ';tower',     ';segType:Pillar',        ';TYPE:Skirt',              ';TYPE:SKIRT'     },
+  --{ 'default',  'Craftware',              'Prusa/Super Slicer',         'Orca',                             'Cura'            }
+  { ';travel',    ';segType:Travel',        '',                           '',                                 ''                },
+  { ';perimeter', ';segType:Perimeter',     ';TYPE:External perimeter',   '; FEATURE: Outer wall',            ';TYPE:WALL-OUTER'},
+  { ';shell',     ';segType:HShell',        ';TYPE:Internal perimeter',   '; FEATURE: Inner wall',            ';TYPE:WALL-INNER'},
+  { ';cover',     ';segType:Infill',        ';TYPE:Solid infill',         '; FEATURE: Internal solid infill', ';TYPE:FILL'      }, -- for Orca typing, both '; FEATURE: Bottom surface' and '; FEATURE: Top surface' exist ... choose one or reimplment accordingly
+  { ';infill',    ';segType:Infill',        ';TYPE:Internal infill',      '; FEATURE: Sparse infill',         ';TYPE:FILL'      },
+  { ';gapfill',   ';segType:Infill',        ';TYPE:Gap fill',             '; FEATURE: Gap infill',            ';TYPE:FILL'      },
+  { ';bridge',    ';segType:SupportTouch',  ';TYPE:Overhang perimeter',   ': FEATURE: Bridge',                ';TYPE:WALL-OUTER'},
+  { ';support',   ';segType:Support',       ';TYPE:Support material',     '; FEATURE: Support',               ';TYPE:SUPPORT'   },
+  { ';brim',      ';segType:Skirt',         ';TYPE:Skirt',                '; FEATURE: Skirt',                 ';TYPE:SKIRT'     },
+  { ';raft',      ';segType:Raft',          ';TYPE:Skirt',                '; FEATURE: Skirt',                 ';TYPE:SKIRT'     },
+  { ';shield',    ';segType:Pillar',        ';TYPE:Skirt',                '; FEATURE: Skirt',                 ';TYPE:SKIRT'     },
+  { ';tower',     ';segType:Pillar',        ';TYPE:Skirt',                '; FEATURE: Prime tower',           ';TYPE:SKIRT'     },
 }
 
 --##################################################
