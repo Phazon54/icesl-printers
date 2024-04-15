@@ -7,6 +7,9 @@ max_vol_speed = 21 -- mm^3/s
 
 -- temperatures
 extruder_temp_degree_c = 210
+filament_min_temp = 190
+filament_max_temp = 240
+
 if bed_type == 1 then
   bed_temp_degree_c = 35
 elseif bed_type == 2 then
@@ -32,7 +35,9 @@ speed_multiplier = 1.0
 
 -- cooling
 enable_fan = true
-fan_speed_percent = 100
+fan_speed_percent = 70
+aux_fan_speed = 70
+vent_fan_speed = 70
 fan_speed_percent_on_bridges = 100
 
 --#################################################

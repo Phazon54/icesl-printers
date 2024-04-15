@@ -7,9 +7,15 @@ bed_size_y_mm = 256
 bed_size_z_mm = 250
 
 -- Printer Extruder
-extruder_count = 1
+extruder_count = 4 -- change to reflect the number of filament available with AMS units (max 16)
 nozzle_diameter_mm = 0.4
 filament_diameter_mm = 1.75
+
+-- AMS
+-- prepare an array for flushing length
+for i = 0, max_number_extruders, 1 do
+  _G['flush_length_'..i] = nozzle_diameter_mm
+end
 
 -- Layer height limits
 z_layer_height_mm_min = nozzle_diameter_mm * 0.20
@@ -47,6 +53,14 @@ bed_temp_degree_c_max = 120
 -- Air filtering
 add_checkbox_setting('air_filter', 'Enable air filter', 'Enable the air filter system, if available on the machine')
 air_filter = false
+
+-- First layer scan
+add_checkbox_setting('first_layer_scan', 'First layer scan', 'Scan the first layer for calibration and mishaps detection')
+first_layer_scan = true
+
+-- Timelapse
+--add_setting('timelapse_type', 'Timelapse type', 0, 1, "Type of Timelapse to produce:\n- 0: timelapse without wipe tower\n- 1: timelapse with wipe tower", 0)
+timelapse_type = 1
 
 -- Printing speed limits
 print_speed_mm_per_sec = 300
@@ -127,6 +141,8 @@ z_lift_mm = 0.4
 name_en = "PLA"
 filament_density = 1.25 -- g/cm3 PLA
 max_vol_speed = 21 -- mm^3/s
+filament_min_temp = 190
+filament_max_temp = 240
 
 --#################################################
 
