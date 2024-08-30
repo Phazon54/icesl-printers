@@ -13,17 +13,17 @@ reload_bed_mesh = false
 
 -- Build Area dimensions
 bed_size_x_mm = 300
-bed_size_y_mm = 300
+bed_size_y_mm = 290
 bed_size_z_mm = 400
 
 -- Printer Extruder
 extruder_count = 2
-nozzle_diameter_mm = 0.4
+nozzle_diameter_mm = 0.8 --0.4
 filament_diameter_mm = 1.75
 
 -- Retraction Settings
 -- between 0.5mm and 0.8mm of retract/prime for direct-drive setup
-filament_priming_mm = 0.5
+filament_priming_mm = 0.0 --0.4
 priming_mm_per_sec = 45
 retract_mm_per_sec = 45
 
